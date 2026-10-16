@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { PDFDownloadLink } from "@react-pdf/renderer";
-import { Plus, Trash2, ChevronDown, ChevronUp, Download, FileText, RotateCcw, Save, Eye, GripVertical, Sun, Moon } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Download, FileText, RotateCcw, Save, Eye, GripVertical, Sun, Moon, Pencil, FilePlus, MoreVertical } from "lucide-react";
 import ResumePdf from "./ResumePdf.jsx";
 import { defaultResume } from "./defaultResume.js";
 
@@ -103,6 +103,24 @@ export default function App() {
   const [savedLabel, setSavedLabel] = useState("Saved locally");
   const [showPreview, setShowPreview] = useState(false);
   const [toast, setToast] = useState("");
+  const [overflowOpen, setOverflowOpen] = useState(false);
+  const overflowRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (overflowRef.current && !overflowRef.current.contains(e.target)) {
+        setOverflowOpen(false);
+      }
+    };
+    if (overflowOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [overflowOpen]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -200,10 +218,20 @@ export default function App() {
 
   return <div className="app-shell">
     <header className="topbar">
-      <div className="brand"><div className="brand-icon"><FileText size={20}/></div><div><strong>Resume Studio</strong><small>Build a resume that gets noticed</small></div></div>
-      <div className="top-actions">
+      <div className="brand">
+        <div className="brand-icon"><FileText size={20}/></div>
+        <div className="brand-info">
+          <strong>Resume Studio</strong>
+          <small>Build a resume that gets noticed</small>
+        </div>
+      </div>
+
+      {/* Desktop Actions */}
+      <div className="top-actions desktop-actions">
         <span className="save-status"><Save size={14}/>{savedLabel}</span>
-        <button className="btn secondary" onClick={newResume}><RotateCcw size={15}/> New</button>
+        <button className="btn secondary" onClick={newResume} title="Create new resume">
+          <FilePlus size={15}/> New
+        </button>
         <PDFDownloadLink document={<ResumePdf resume={resume}/>} fileName={`${(resume.personal.name || "resume").trim().replace(/\s+/g,"-").toLowerCase()}.pdf`} className="btn primary download-link">
           {({ loading }) => <><Download size={16}/>{loading ? "Preparing PDF..." : "Download PDF"}</>}
         </PDFDownloadLink>
@@ -221,6 +249,139 @@ export default function App() {
             {theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           </span>
         </button>
+      </div>
+
+      {/* Mobile Actions */}
+      <div className="top-actions mobile-actions">
+        {/* 1. Edit Resume */}
+        <button
+          type="button"
+          className={`nav-action-btn ${!showPreview ? "active" : ""}`}
+          onClick={() => setShowPreview(false)}
+          aria-label="Edit Resume"
+          title="Edit Resume"
+        >
+          <Pencil size={18} />
+          <span className="nav-btn-tooltip">Edit Resume</span>
+        </button>
+
+        {/* 2. Preview Resume */}
+        <button
+          type="button"
+          className={`nav-action-btn ${showPreview ? "active" : ""}`}
+          onClick={() => setShowPreview(true)}
+          aria-label="Preview Resume"
+          title="Preview Resume"
+        >
+          <Eye size={18} />
+          <span className="nav-btn-tooltip">Preview Resume</span>
+        </button>
+
+        {/* 3. New Resume */}
+        <button
+          type="button"
+          className="nav-action-btn"
+          onClick={newResume}
+          aria-label="New Resume"
+          title="New Resume"
+        >
+          <FilePlus size={18} />
+          <span className="nav-btn-tooltip">New Resume</span>
+        </button>
+
+        {/* 4. Download Resume */}
+        <PDFDownloadLink
+          document={<ResumePdf resume={resume}/>}
+          fileName={`${(resume.personal.name || "resume").trim().replace(/\s+/g,"-").toLowerCase()}.pdf`}
+          className="nav-action-btn nav-download-btn"
+          aria-label="Download Resume"
+          title="Download Resume"
+        >
+          {({ loading }) => (
+            <>
+              <Download size={18} />
+              <span className="nav-btn-tooltip">
+                {loading ? "Preparing PDF..." : "Download Resume"}
+              </span>
+            </>
+          )}
+        </PDFDownloadLink>
+
+        {/* Theme Toggle */}
+        <button
+          type="button"
+          className={`nav-action-btn theme-toggle-btn ${theme === "dark" ? "is-dark" : "is-light"}`}
+          onClick={toggleTheme}
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          <span className="theme-toggle-icon" key={theme}>
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+          </span>
+          <span className="nav-btn-tooltip">
+            {theme === "dark" ? "Light Mode" : "Dark Mode"}
+          </span>
+        </button>
+
+        {/* Overflow Menu (Compact Menu for narrow screens) */}
+        <div className="overflow-menu-container" ref={overflowRef}>
+          <button
+            type="button"
+            className={`nav-action-btn overflow-btn ${overflowOpen ? "active" : ""}`}
+            onClick={() => setOverflowOpen(prev => !prev)}
+            aria-label="More actions"
+            title="More actions"
+            aria-expanded={overflowOpen}
+          >
+            <MoreVertical size={18} />
+            <span className="nav-btn-tooltip">More</span>
+          </button>
+          {overflowOpen && (
+            <div className="nav-overflow-dropdown" role="menu">
+              <button
+                type="button"
+                className={`overflow-menu-item ${!showPreview ? "active" : ""}`}
+                onClick={() => { setShowPreview(false); setOverflowOpen(false); }}
+              >
+                <Pencil size={15} /> Edit Resume
+              </button>
+              <button
+                type="button"
+                className={`overflow-menu-item ${showPreview ? "active" : ""}`}
+                onClick={() => { setShowPreview(true); setOverflowOpen(false); }}
+              >
+                <Eye size={15} /> Preview Resume
+              </button>
+              <button
+                type="button"
+                className="overflow-menu-item"
+                onClick={() => { newResume(); setOverflowOpen(false); }}
+              >
+                <FilePlus size={15} /> New Resume
+              </button>
+              <PDFDownloadLink
+                document={<ResumePdf resume={resume} />}
+                fileName={`${(resume.personal.name || "resume").trim().replace(/\s+/g, "-").toLowerCase()}.pdf`}
+                className="overflow-menu-item"
+                onClick={() => setOverflowOpen(false)}
+              >
+                {({ loading }) => (
+                  <>
+                    <Download size={15} /> {loading ? "Preparing PDF..." : "Download Resume"}
+                  </>
+                )}
+              </PDFDownloadLink>
+              <button
+                type="button"
+                className="overflow-menu-item"
+                onClick={() => { toggleTheme(); setOverflowOpen(false); }}
+              >
+                {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+                {theme === "dark" ? "Light Mode" : "Dark Mode"}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
 
@@ -353,7 +514,6 @@ export default function App() {
         <div className="preview-note"><Eye size={15}/> Preview is an approximation of the exported PDF. Download and inspect the PDF before sending it.</div>
       </section>
     </main>
-    <nav className="mobile-switch"><button className={!showPreview ? "active" : ""} onClick={()=>setShowPreview(false)}>Edit resume</button><button className={showPreview ? "active" : ""} onClick={()=>setShowPreview(true)}>Preview</button></nav>
     {toast && <div className="toast">{toast}</div>}
   </div>;
 }
