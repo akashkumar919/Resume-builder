@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f3f5f9" id="meta-theme-color" />
+    <meta
+      name="description"
+      content="Create a professional resume and download it as a PDF."
+    />
+    <title>Resume Studio</title>
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('resume-studio-theme') || localStorage.getItem('theme');
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var theme = (saved === 'dark' || saved === 'light') ? saved : (prefersDark ? 'dark' : 'light');
+          document.documentElement.setAttribute('data-theme', theme);
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+            var meta = document.getElementById('meta-theme-color');
+            if (meta) meta.setAttribute('content', '#1a1a1a');
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
